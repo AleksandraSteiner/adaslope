@@ -6,7 +6,7 @@ library(glmnet)
 library(missMDA)
 library(mice)
 
-ABSLOPE <- function(X, y, 
+ABSLOPE = function(X, y, 
                     lambda, #add seed
                     a, b, 
                     beta.start = NA,
@@ -21,39 +21,32 @@ ABSLOPE <- function(X, y,
   
   #firstly checking missingness (will be done later)
   #...
-  
-  missingcols = calculate_missing_cols(X)
 
   init_list = initialization_functions(X, y,
                                        beta.start, 
                                        sigma.known, 
                                        sigma.init, 
                                        lambda,
-                                       missingcols,
+                                       calculate_missing_cols(X),
                                        a, b)
-  
-  est_cache = create_estimations_cache(X, 
-                                       maxit, 
-                                       init_list)
   
   est_cache_result = iterate_algorithm(t = 0, 
                                        cstop = 1, 
                                        tol_em,
                                        init_list, 
-                                       est_cache,
+                                       create_estimations_cache(X, 
+                                                                maxit, 
+                                                                init_list),
                                        maxit,
                                        print_iter,
                                        X,
                                        lambda,
                                        sigma.known)
-
-  if(missingcols == 0) mu = Sigma = NULL
   
-  return(list(X_mis, 
-              beta = est_cache_result[1][, maxit],
-              estimations_cache_result[1], 
-              beta.new = est_cache_result[1][, maxit] * 
-                (get_gamma_average(est_cache_result) > 1/2)))
+  return(beta = est_cache_result[1][, maxit],
+         estimations_cache_result[1], 
+         beta.new = est_cache_result[1][, maxit] * 
+           (rowMeans(est_cache_result[2][ , - (1 : 20)], na.rm = TRUE) > 1/2))
 }
 
 #small test
