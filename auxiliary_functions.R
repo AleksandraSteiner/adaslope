@@ -260,7 +260,32 @@ estimate_mu_Big_Sigma = function(X, mu.old, Big_Sigma.old) {
     list(mu.old, Big_Sigma.old)
 }
 
+update_params = function(beta.old, beta, eta,
+                               sigma.old, sigma,
+                               theta.old, theta,
+                               mu.old, mu,
+                               Big_Sigma.old, Big_Sigma,
+                               X) {
+  missingcols = calculate_missing_cols(X)
+  if(eta != 1){
+    beta = beta.old + eta*(beta - beta.old)  
+    sigma = sigma.old + eta*(sigma - sigma.old)
+    theta = theta.old + eta*(theta - theta.old)
+    if(missingcols != 0){
+      list(beta, sigma, theta, 
+           mu.old + eta*(mu - mu.old), 
+           Big_Sigma.old + eta*(Big_Sigma - Big_Sigma.old))
+    }
+    else
+      list(beta, sigma, theta, mu, Big_Sigma)
+  }
+  else
+    list(beta, sigma, theta, mu, Big_Sigma)
+    
+}
 
+#this function should contain less functions which will be more general
+#it is happening to much inside iterate_algorithm (not readable)
 iterate_algorithm = function(t = 0, 
                              cstop = 1, 
                              tol_em,
@@ -299,9 +324,6 @@ iterate_algorithm = function(t = 0,
     mu.old = old_list[4]
     Big_Sigma.old = old_list[5]
     
-    #TODO: we will put this MLE functions below
-    #into small functions
-    
     beta = estimate_beta_ML(gamma, c, X, y, lambda_sigma)
     
     cstop = sum((beta - beta.old)^2)
@@ -319,25 +341,22 @@ iterate_algorithm = function(t = 0,
     mu = mu.Big_Sigma[1]
     Big_Sigma = mu.Big_Sigma[2]
     
-    if(eta != 1){
-      beta = beta.old + eta*(beta - beta.old)  
-      sigma = sigma.old + eta*(sigma - sigma.old)
-      theta = theta.old + eta*(theta - theta.old)
-      if(missingcols != 0){
-        mu = mu.old + eta*(mu - mu.old)
-        Big_Sigma = Big_Sigma.old + eta*(Big_Sigma - Big_Sigma.old)
-      }
-    }
-    update_estimations_cache(beta, sigma, gamma, theta, c, 
+    updated_params = update_params(beta.old, beta, eta,
+                                   sigma.old, sigma,
+                                   theta.old, theta,
+                                   mu.old, mu,
+                                   Big_Sigma.old, Big_Sigma,
+                                   X)
+    beta = updated_params[[1]]
+    sigma = updated_params[[2]]
+    theta = updated_params[[3]]
+    mu = updated_params[[4]]
+    Big_Sigma = updated_params[[5]]
+    
+    
+    update_estimations_cache(beta, sigma, gamma, 
+                             theta, c, 
                              estimations_cache)
   }
-    return(estimation_cache)
+    list(estimations_cache, X)
 }
-
-get_gamma_average = function(estimations_cache_result) {
-  rowMeans(estimations_cache_result[2][ , - (1 : 20)], na.rm = TRUE)
-}
-
-
-
-
