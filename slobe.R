@@ -2,11 +2,7 @@ library(glmnet)
 library(SLOPE)
 library(nlshrink)
 library(MASS)
-
-trunc_norm_gamma <- function(a, b) {
-  norm_const <- b^a / gamma(a)
-  return(pgamma(1, a, b) / norm_const)
-}
+source("auxiliary_slobe.R")
 
 slope_admm <- function(X, y, lambda, p, rho, max_iter=500, tol=1e-6) {
   
@@ -47,126 +43,96 @@ slope_admm <- function(X, y, lambda, p, rho, max_iter=500, tol=1e-6) {
 }
 
 SLOBE <- function(X, y, lambda,
-                  beta_start=NA,
-                  sigma_known=NA, sigma_init=NA,
-                  a_prior=1, b_prior=1,
-                  max_iter=500, tol=1e-5,
-                  verbose=FALSE)
+                  a=1, b=1,
+                  beta.start=NA,
+                  maxit=500, tol_em=1e-5,
+                  impute='PCA',
+                  sigma.known=NA, sigma.init=NA,
+                  print_iter=FALSE)
 {
+  
+  initialization_list <- initialization_functions(X, y,
+                                                  beta.start,
+                                                  sigma.known,
+                                                  sigma.init,
+                                                  lambda,
+                                                  calculate_missing_cols(X),
+                                                  a, b)
+  
+  beta = initialization_list[[1]]
+  gamma = initialization_list[[2]] 
+  sigma = initialization_list[[3]]
+  theta = initialization_list[[4]]
+  c = initialization_list[[5]]
+  Sigma = initialization_list[[6]]
+  rank = initialization_list[[7]]
+  
+  lambdas = calculate_lambdas(lambda, sigma)
+  lambda_sigma = lambdas[[1]]
+  lambda_sigma_inv = lambdas[[2]]
+  
   p <- ncol(X)
   n <- length(y)
   
-  gamma <- rep(0, p)
   i <- 1
   converged <- FALSE
-  
-  # Initialize beta
-  if(is.na(beta_start)){ # initialization not given
-    # LASSO cv
-    objstart = cv.glmnet(X, y)
-    beta = coef(objstart,s = "lambda.1se")
-    beta = beta[2:(p+1)]
-  } else{beta = beta_start} # initialization given
-  
-  # Initialize sigma
-  if(is.na(sigma_known)){ # real value of sigma is unknown
-    if(is.na(sigma_init)){ # initialization not given
-      #sigma = sd(y - X.sim %*% beta) 
-      sigma = sqrt(sum((y - X %*% beta)^2)/(n-1))
-    } else{sigma <- sigma_init} # initialization given
-  } else{sigma <- sigma_known} # real value of sigma is known
-  
-  # Initialize theta
-  theta <- (sum(beta != 0)+a_prior)/(p+b_prior+a_prior);
-  
-  # Initialize c
-  lambda_sigma_inv <- lambda / sigma
-  lambda_sigma <- lambda * sigma
-  c <- min((sum(abs(beta)>0)+1)/sum(abs(beta[beta != 0]))/lambda_sigma_inv[p],1)
-  if(!is.finite(c)) c <- 1
-  
-  # Initialize mu, Sigma
-  mu = apply(X,2,mean)
-  Sigma = linshrink_cov(X)
   
   # Initialize parameter history vectors
   sigmas <- c(sigma)
   
   # Main loop
-  while(i < max_iter) {
+  while(i < maxit) {
     
+    Sigma <- update
     mu <- apply(X, 2, mean)
     Sigma <- linshrink_cov(X)
     
-    if(verbose) {
+    if(print_iter) {
       print(sprintf('Iteration %s', i))
     }
     
-    # Update gammas
+    gamma_new <- slobe_update_gamma(gamma, c, beta, p, sigma)
+
+    theta_new <- slobe_update_theta(gamma, a, b, p)
     
-    W <- diag(c * gamma + 1 - gamma)
-    Wbeta <- W %*% beta
-    ord_Wbeta <- order(Wbeta, decreasing=TRUE)
-    
-    gamma_new <- rep(0, p)
-    
-    for(j in 1:p) {
-      exp1 <- exp(-c / sigma * abs(beta[j]) * lambda[ord_Wbeta[j]])
-      exp2 <- exp(-1 / sigma * abs(beta[j]) * lambda[ord_Wbeta[j]])
-      
-      gamma_new[j] <- theta * c * exp1 / ((1 - theta) * exp2 + theta * c * exp1)
-    }
-    
-    # Update theta
-    
-    theta_new <- (a_prior + sum(gamma == 1)) / (a_prior + b_prior + p)
-    
-    # Update c
-    
-    Wbeta <- W %*% beta
-    ord_Wbeta <- order(Wbeta, decreasing=TRUE)
-    a_prime <- 1 + sum(gamma == 1)
-    b_prime <- 1 / sigma * sum(abs(beta) * lambda[ord_Wbeta] * (gamma == 1))
-    
-    c_new <- trunc_norm_gamma(a_prime+1, b_prime) / trunc_norm_gamma(a_prime, b_prime)
+    c_new <- slobe_update_c(gamma, c, beta, sigma)
     
     # Generate missing observations
     ## TODO
+    X <- slobe_approx_Xmis(X)
     
     # Get new parameters by maximizing likelihood
     
     # Maximize for beta
     beta_new <- SLOPE_solver(X, y, lambda=lambda_sigma)$x
-      
-    # Maximize for sigma
-    rk <- p-rank(abs(beta),ties.method="max")+1;
-    RSS<- sum((y-X%*%beta)^2)
-    sum_lamwbeta <- sum(lambda[rk]*abs(beta_new))
-    sigma_new <- (sqrt(sum_lamwbeta^2+4*n*RSS)+sum_lamwbeta)/(2*n)
+    #beta_new <- estimate_beta_ML(gamma, c, X, y, lambda_sigma)
     
-    # Maximize for mu
+    sigma_new <- estimate_sigma_ML(X, y, beta, lambda,
+                                   sigma.known, sigma)
+
     mu_new <- mu # Remains the same if no missing data
-    
-    # Maximize for Sigma
+
     Sigma_new <- Sigma # Remains the same if no missing data
     
     # Check convergence condition
     err <- t(beta_new - beta) %*% (beta_new - beta)
-    if(err < tol) {
-      i <- max_iter
+    if(err < tol_em) {
+      i <- maxit
       converged <- TRUE
     }
     
     # Update parameters, parameter history and increase iter count
-    lambda_sigma <- lambda * sigma
-    gamma <- gamma_new
-    theta <- theta_new
-    c <- c_new
+    
     
     beta <- beta_new
     sigma <- sigma_new
     mu <- mu_new
     Sigma <- Sigma_new
+    
+    lambda_sigma <- lambda * sigma
+    gamma <- gamma_new
+    theta <- theta_new
+    c <- c_new
     
     sigmas <- c(sigmas, sigma)
     i <- i+1
@@ -176,3 +142,11 @@ SLOBE <- function(X, y, lambda,
   
   return(list('beta'=beta, 'selected'=gamma, 'sigmas'=sigmas))
 }
+
+
+X = matrix(rnorm(1000), nrow=100)
+b = c(sample(-5:5, 5), rep(0, 5))
+y = X %*% b
+
+ncol(X)
+SLOBE(X, y, lambda=10:1, print_iter=TRUE)
