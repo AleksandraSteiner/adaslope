@@ -76,12 +76,12 @@ initialize_mu_BSigma = function(X) {
 }
 
 get_initial_parameters = function(X, y, 
-                                    beta.start, 
-                                    sigma.known, 
-                                    sigma.init, 
-                                    lambda, 
-                                    missingcols,
-                                    a, b) {
+                                  beta.start, 
+                                  sigma.known, 
+                                  sigma.init, 
+                                  lambda, 
+                                  missingcols,
+                                  a, b) {
   beta = initialize_beta(beta.start, X, y)
   
   sigma = initialize_sigma(sigma.known, sigma.init, 
@@ -142,13 +142,12 @@ generate_c_t = function(beta, gamma, lambda_sigma_inv, rank) {
   b_gamma = sum(abs(beta) * lambda_sigma_inv[rank] * (gamma == 1))
   if (a_gamma > 1) {
     if (b_gamma > 0)
-      prob = rtrunc(1, "gamma", 0, 1, shape = a_gamma, rate = b_gamma)
+      rtrunc(1, "gamma", 0, 1, shape = a_gamma, rate = b_gamma)
     else
-      prob = rbeta(1, shape1 = a_gamma, shape2 = 1)
+      rbeta(1, shape1 = a_gamma, shape2 = 1)
   }
   else
-   prob = runif(1, 0, 1)
-  prob
+    runif(1, 0, 1)
 }
 
 scale_mean.w = function(V, weight) {
@@ -221,7 +220,7 @@ create_old_list = function(beta, sigma, theta, mu,
 #PSOBCZYK function
 slope_admm <- function(A, b, z, u, lambda_seq, rho,
                        max_iter = 100, tol_infeas = 1e-3,
-                       verbose = FALSE){
+                       verbose = FALSE) {
   M <- solve(crossprod(A) + diag(rho, ncol(A)))
   MtAb <- M %*% crossprod(A,b)
   lambda_seq_rho <- lambda_seq/rho
@@ -274,7 +273,7 @@ estimate_sigma_ML = function(X, y, beta,
     sum_lamwbeta = sum(lambda[rk] * abs(z))
     sigma = (sqrt(sum_lamwbeta ^ 2 + 4 * n * RSS) + sum_lamwbeta) / (2 * n)
   }
-    sigma
+  sigma
 }
 
 estimate_theta_ML = function(gamma, a, b, X) {
@@ -303,27 +302,26 @@ update_params = function(beta.old, beta, eta,
     sigma = sigma.old + eta * (sigma - sigma.old)
     theta = theta.old + eta * (theta - theta.old)
     if (missingcols != 0) { 
-           mu = mu.old + eta*(mu - mu.old)
-           Big_Sigma = Big_Sigma.old + eta * (Big_Sigma - Big_Sigma.old)
+      mu = mu.old + eta*(mu - mu.old)
+      Big_Sigma = Big_Sigma.old + eta * (Big_Sigma - Big_Sigma.old)
     }
   }
-    list(beta, sigma, theta, mu, Big_Sigma)
+  list(beta, sigma, theta, mu, Big_Sigma)
   
 }
 
 scale_X = function(X, scale) {
+  n = nrow(X)
+  row.w = rep(1, nrow(X)) / nrow(X)
+  mean.w = apply(X, 2, scale_mean.w, row.w)
+  X.sim = t(t(X) - mean.w)
+  std.w = apply(X.sim, 2, scale_std.w, row.w)*sqrt(n)
   if (scale) {
-    n = nrow(X)
-    row.w = rep(1, nrow(X)) / nrow(X)
-    mean.w = apply(X, 2, scale_mean.w, row.w)
-    X.sim = t(t(X) - mean.w)
-    std.w = apply(X.sim, 2, scale_std.w, row.w)*sqrt(n)
     X.sim = t(t(X.sim) / std.w)
   }
   else X.sim = X
   list(X.sim, row.w, mean.w, std.w)
 }
-
 iterate_saem_algorithm = function(cstop = 1, 
                                   tol_em,
                                   initialization_list, 
