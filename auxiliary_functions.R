@@ -384,7 +384,8 @@ iterate_saem_algorithm = function(cstop = 1,
     
     sigma = estimate_sigma_ML(X, y, beta, 
                               lambda, lambda_sigma,
-                              sigma.known, sigma)
+                              sigma.known, sigma,
+                              gamma, c)
     
     lambdas = calculate_lambdas(lambda, sigma)
     lambda_sigma = lambdas[[1]]
