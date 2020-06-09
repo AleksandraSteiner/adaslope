@@ -1,3 +1,3 @@
-# r2020_adaslope
+# Adaptive Bayesian Slope - Projekt z "Rozwoju oprogramowania w R"
 
-## testing testing 1 2 3
+Based on [M. Bogdan et al., 2015](https://arxiv.org/pdf/1909.06631.pdf)

@@ -260,7 +260,8 @@ estimate_beta_ML = function(gamma, c, X, y, lambda_sigma) {
 
 estimate_sigma_ML = function(X, y, beta, 
                              lambda, lambda_sigma,
-                             sigma.known, sigma) {
+                             sigma.known, sigma,
+                             gamma, c) {
   if (is.na(sigma.known)) {
     n = nrow(X)
     p = ncol(X)
@@ -322,6 +323,7 @@ scale_X = function(X, scale) {
   else X.sim = X
   list(X.sim, row.w, mean.w, std.w)
 }
+
 iterate_saem_algorithm = function(cstop = 1, 
                                   tol_em,
                                   initialization_list, 
