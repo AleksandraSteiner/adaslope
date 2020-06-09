@@ -51,14 +51,14 @@ SLOBE <- function(X, y, lambda,
                   print_iter=FALSE)
 {
   
-  initialization_list <- initialization_functions(X, y,
-                                                  beta.start,
-                                                  sigma.known,
-                                                  sigma.init,
-                                                  lambda,
-                                                  calculate_missing_cols(X),
-                                                  a, b)
-  
+  initialization_list <- get_initial_parameters(X, y,
+                                                beta.start,
+                                                sigma.known,
+                                                sigma.init,
+                                                lambda,
+                                                calculate_missing_cols(X),
+                                                a, b)
+
   beta = initialization_list[[1]]
   gamma = initialization_list[[2]] 
   sigma = initialization_list[[3]]
@@ -83,7 +83,7 @@ SLOBE <- function(X, y, lambda,
   # Main loop
   while(i < maxit) {
     
-    Sigma <- update
+    lambda_sigma <- lambda * sigma
     mu <- apply(X, 2, mean)
     Sigma <- linshrink_cov(X)
     
@@ -91,11 +91,11 @@ SLOBE <- function(X, y, lambda,
       print(sprintf('Iteration %s', i))
     }
     
-    gamma_new <- slobe_update_gamma(gamma, c, beta, p, sigma)
+    gamma_new <- slobe_update_gamma(gamma, c, beta, p, sigma, lambda, theta)
 
     theta_new <- slobe_update_theta(gamma, a, b, p)
     
-    c_new <- slobe_update_c(gamma, c, beta, sigma)
+    c_new <- slobe_update_c(gamma, c, beta, sigma, lambda)
     
     # Generate missing observations
     ## TODO
@@ -108,7 +108,8 @@ SLOBE <- function(X, y, lambda,
     #beta_new <- estimate_beta_ML(gamma, c, X, y, lambda_sigma)
     
     sigma_new <- estimate_sigma_ML(X, y, beta, lambda,
-                                   sigma.known, sigma)
+                                   lambda_sigma, sigma.known, sigma,
+                                   gamma, c)
 
     mu_new <- mu # Remains the same if no missing data
 
@@ -147,6 +148,7 @@ SLOBE <- function(X, y, lambda,
 X = matrix(rnorm(1000), nrow=100)
 b = c(sample(-5:5, 5), rep(0, 5))
 y = X %*% b
-
+b
 ncol(X)
-SLOBE(X, y, lambda=10:1, print_iter=TRUE)
+SLOBE(X, y, lambda=seq(5, 1, length.out=10), print_iter=TRUE)
+seq(5, 1, length.out=10)

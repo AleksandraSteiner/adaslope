@@ -3,7 +3,7 @@ trunc_norm_gamma <- function(a, b) {
   return(pgamma(1, a, b) / norm_const)
 }
 
-slobe_update_gamma <- function(gamma, c, beta, p, sigma) {
+slobe_update_gamma <- function(gamma, c, beta, p, sigma, lambda, theta) {
   W <- diag(c * gamma + 1 - gamma)
   Wbeta <- W %*% beta
   ord_Wbeta <- order(Wbeta, decreasing=TRUE)
@@ -24,12 +24,13 @@ slobe_update_theta <- function(gamma, a_prior, b_prior, p) {
   return ((a_prior + sum(gamma == 1)) / (a_prior + b_prior + p))
 }
 
-slobe_update_c <- function(gamma, c, beta, sigma) {
+slobe_update_c <- function(gamma, c, beta, sigma, lambda) {
   W <- diag(c * gamma + 1 - gamma)
   Wbeta <- W %*% beta
   ord_Wbeta <- order(Wbeta, decreasing=TRUE)
   a_prime <- 1 + sum(gamma == 1)
   b_prime <- 1 / sigma * sum(abs(beta) * lambda[ord_Wbeta] * (gamma == 1))
+  
   
   return(trunc_norm_gamma(a_prime+1, b_prime) / trunc_norm_gamma(a_prime, b_prime))
 }
