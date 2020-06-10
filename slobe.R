@@ -71,6 +71,9 @@ SLOBE <- function(X, y, lambda,
   lambda_sigma = lambdas[[1]]
   lambda_sigma_inv = lambdas[[2]]
   
+  betas <- matrix(NA, nrow=maxit, ncol=ncol(X))
+  betas[1,] <- beta
+  
   p <- ncol(X)
   n <- length(y)
   
@@ -81,7 +84,7 @@ SLOBE <- function(X, y, lambda,
   sigmas <- c(sigma)
   
   # Main loop
-  while(i < maxit) {
+  while(i < maxit && !converged) {
     
     lambda_sigma <- lambda * sigma
     mu <- apply(X, 2, mean)
@@ -118,7 +121,6 @@ SLOBE <- function(X, y, lambda,
     # Check convergence condition
     err <- t(beta_new - beta) %*% (beta_new - beta)
     if(err < tol_em) {
-      i <- maxit
       converged <- TRUE
     }
     
@@ -126,6 +128,7 @@ SLOBE <- function(X, y, lambda,
     
     
     beta <- beta_new
+    betas[i+1,] <- beta_new
     sigma <- sigma_new
     mu <- mu_new
     Sigma <- Sigma_new
@@ -141,14 +144,20 @@ SLOBE <- function(X, y, lambda,
   
   gamma <- which(beta != 0)
   
-  return(list('beta'=beta, 'selected'=gamma, 'sigmas'=sigmas))
+  res = list('beta'=beta, 'selected'=gamma, 'sigmas'=sigmas, 'betas'=betas[1:i,])
+  class(res) <- c('abslope')
+  
+  return(res)
 }
 
 
 X = matrix(rnorm(1000), nrow=100)
 b = c(sample(-5:5, 5), rep(0, 5))
-y = X %*% b
-b
-ncol(X)
-SLOBE(X, y, lambda=seq(5, 1, length.out=10), print_iter=TRUE)
+y = X %*% b + rnorm(100, 0, 0.1)
+A <- SLOBE(X, y, lambda=seq(5, 1, length.out=10), print_iter=TRUE)
 seq(5, 1, length.out=10)
+A
+class(A)
+summary(A)
+A$betas
+plot(A)

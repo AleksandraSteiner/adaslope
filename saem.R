@@ -61,7 +61,7 @@ beta.start = 1:3
 #Marcin data
 X = matrix(rnorm(1000), nrow=100)
 beta.start = c(sample(-5:5, 5), rep(0, 5))
-y = X %*% beta.start
+y = X %*% beta.start + 1
 
 ABSLOPE(X, y, lambda,
         a, b, beta.start,
