@@ -21,4 +21,5 @@ Description: Implementation of ABSlope as described in M. Bogdan et al., 2015
 License: GPL
 Encoding: UTF-8
 LazyData: true
-Depends: glmnet, nlshrink, truncdist, MASS, missMDA, mice
+Depends: glmnet, nlshrink, truncdist, MASS, missMDA, mice, SLOPE
+RoxygenNote: 7.1.0
