@@ -1,7 +1,7 @@
 #' Create an adaSlope model with full algorithm
 #' 
 #' @param X Design matrix
-#' @param y Response vecor
+#' @param y Response vector
 #' @param lambda Vector of coefficient L1 penalties
 #' @param a Prior for coefficient calculation
 #' @param b Prior for coefficient calculation
