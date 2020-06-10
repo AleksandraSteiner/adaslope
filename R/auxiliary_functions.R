@@ -7,10 +7,11 @@ check_missingness = function(X) {
 
 detect_missing_col = function(X) {
   miss_presence = check_missingness(X)
-  if (sum(miss_presence) > 0) 
-    (1:ncol(miss_presence))[apply(miss_presence, 2, sum) > 0]
+  if (sum(miss_presence) > 0)
+    which_missing = (1:ncol(miss_presence))[apply(miss_presence, 2, sum) > 0]
   else
-    NULL
+    which_missing = NULL
+  which_missing
 }
 
 calculate_missing_cols = function(X) {
@@ -22,21 +23,27 @@ initialize_beta = function(beta.start, X, y) {
   if (is.na(beta.start[1])) {
     objstart = cv.glmnet(X, y)
     coeff = coef(objstart, s = "lambda.1se")
-    coeff[2:(p + 1)]
-  } 
-  else beta.start
+    beta = coeff[2:(p + 1)]
+  }
+  else
+    beta = beta.start
+  beta
 }
 
-initialize_sigma = function(sigma.known, sigma.init, 
+initialize_sigma = function(sigma.known,
+                            sigma.init,
                             beta, X, y) {
   n = nrow(X)
   if (is.na(sigma.known)) {
     if (is.na(sigma.init)) {
-      sqrt(sum((y - X %*% beta) ^ 2) / (n - 1))
-    } 
-    else sigma.init
-  } 
-  else sigma.known 
+      sigma = sqrt(sum((y - X %*% beta) ^ 2) / (n - 1))
+    }
+    else
+      sigma = sigma.init
+  }
+  else
+    sigma = sigma.known
+  sigma
 }
 
 initialize_theta = function(beta, a, b, X) {
@@ -55,9 +62,10 @@ calculate_lambdas = function(lambda, sigma) {
 
 initialize_c = function(beta, lambda_sigma_inv, X) {
   p = ncol(X)
-  c = min((sum(abs(beta) > 0) + 1) / 
+  c = min((sum(abs(beta) > 0) + 1) /
             (sum(abs(beta[beta != 0])) * lambda_sigma_inv[p]), 1)
-  if (!is.finite(c)) c = 1
+  if (!is.finite(c))
+    c = 1
   c
 }
 
@@ -75,16 +83,16 @@ initialize_mu_BSigma = function(X) {
   list(mu, Big_Sigma)
 }
 
-get_initial_parameters = function(X, y, 
-                                  beta.start, 
-                                  sigma.known, 
-                                  sigma.init, 
-                                  lambda, 
+get_initial_parameters = function(X, y,
+                                  beta.start,
+                                  sigma.known,
+                                  sigma.init,
+                                  lambda,
                                   missingcols,
                                   a, b) {
   beta = initialize_beta(beta.start, X, y)
   
-  sigma = initialize_sigma(sigma.known, sigma.init, 
+  sigma = initialize_sigma(sigma.known, sigma.init,
                            beta, X, y)
   
   theta = initialize_theta(beta, a, b, X)
@@ -117,12 +125,12 @@ create_estimations_cache = function(X, maxit, initialization_list) {
   sigmas_vector[, 1] = initialization_list[[3]]
   theta_vector[, 1] = initialization_list[[4]]
   c_vector[, 1] = initialization_list[[5]]
-  list(betas_matrix, 
-       gammas_matrix, 
+  list(betas_matrix,
+       gammas_matrix,
        sigmas_vector,
-       theta_vector, 
+       theta_vector,
        c_vector)
-} 
+}
 
 update_step_size = function(t) {
   ifelse(t <= 20, 1, 1 / (t - 20))
@@ -142,17 +150,19 @@ generate_c_t = function(beta, gamma, lambda_sigma_inv, rank) {
   b_gamma = sum(abs(beta) * lambda_sigma_inv[rank] * (gamma == 1))
   if (a_gamma > 1) {
     if (b_gamma > 0)
-      rtrunc(1, "gamma", 0, 1, shape = a_gamma, rate = b_gamma)
+      c_t = rtrunc(1, "gamma", 0, 1, shape = a_gamma, rate = b_gamma)
     else
-      rbeta(1, shape1 = a_gamma, shape2 = 1)
+      c_t = rbeta(1, shape1 = a_gamma, shape2 = 1)
   }
   else
-    runif(1, 0, 1)
+    c_t = runif(1, 0, 1)
+  c_t
 }
 
 scale_mean.w = function(V, weight) {
   res = sum(V * weight, na.rm = TRUE) / sum(weight[!is.na(V)])
 }
+
 scale_std.w = function(V, weight) {
   res = sqrt(sum(V ^ 2 * weight, na.rm = TRUE) / sum(weight[!is.na(V)]))
 }
@@ -170,7 +180,7 @@ scale_X_mis = function(X_mis, scale, row.w, std.w, mean.w) {
 }
 
 #TODO: this function is still too composite
-generate_X = function(Big_Sigma, mu, beta, sigma, 
+generate_X = function(Big_Sigma, mu, beta, sigma,
                       y, X, row.w, std.w, mean.w) {
   missingcols = calculate_missing_cols(X)
   if (missingcols != 0) {
@@ -178,9 +188,9 @@ generate_X = function(Big_Sigma, mu, beta, sigma,
     tau = sqrt(diag(Big_Sigma_inv + beta ^ 2 / sigma ^ 2))
     
     sapply(1:length(y), function(i) {
-      mis = which(is.na(X[i, ])) 
+      mis = which(is.na(X[i, ]))
       if (length(mis) > 0) {
-        X_obs = X[i, -mis] 
+        X_obs = X[i, -mis]
         beta_mis = beta[mis]
         beta_obs = beta[-mis]
         m_i = (Big_Sigma_inv %*% mu)[mis]
@@ -191,7 +201,7 @@ generate_X = function(Big_Sigma, mu, beta, sigma,
         el_1 = ((r * beta_mis) / sigma ^ 2 + m_i - u_i) / tau_i
         el_2 = ((beta_mis %*% t(beta_mis)) / sigma ^ 2 + Big_Sigma_inv[mis, mis]) /
           (tau_i %*% t(tau_i))
-        diag(el_2) = 1 
+        diag(el_2) = 1
         mu_tilde = solve(el_2, el_1)
         B_inv = solve(el_2)
         Z = mvrnorm(n = 1, mu = mu_tilde, Big_Sigma = B_inv)
@@ -203,9 +213,9 @@ generate_X = function(Big_Sigma, mu, beta, sigma,
   X
 }
 
-create_old_list = function(beta, sigma, theta, mu, 
+create_old_list = function(beta, sigma, theta, mu,
                            Big_Sigma, missingcols) {
-  beta.old = beta 
+  beta.old = beta
   sigma.old = sigma
   theta.old = theta
   if (missingcols != 0) {
@@ -213,14 +223,17 @@ create_old_list = function(beta, sigma, theta, mu,
     Big_Sigma.old = Big_Sigma
     list(beta.old, sigma.old, theta.old, mu.old, Big_Sigma.old)
   }
-  else
-    list(beta.old, sigma.old, theta.old, NULL, NULL)
+  else {
+    mu.old = NULL
+    Big_Sigma.old = NULL
+  }
+  list(beta.old, sigma.old, theta.old, mu.old, Big_Sigma.old)
 }
 
 #PSOBCZYK function
-slope_admm <- function(A, b, z, u, lambda_seq, rho,
-                       max_iter = 100, tol_infeas = 1e-3,
-                       verbose = FALSE) {
+slope_admm = function(A, b, z, u, lambda_seq, rho,
+                      max_iter = 100, tol_infeas = 1e-3,
+                      verbose = FALSE) {
   M <- solve(crossprod(A) + diag(rho, ncol(A)))
   MtAb <- M %*% crossprod(A,b)
   lambda_seq_rho <- lambda_seq/rho
@@ -258,7 +271,7 @@ estimate_beta_ML = function(gamma, c, X, y, lambda_sigma) {
   revW * z
 }
 
-estimate_sigma_ML = function(X, y, beta, 
+estimate_sigma_ML = function(X, y, beta,
                              lambda, lambda_sigma,
                              sigma.known, sigma,
                              gamma, c) {
@@ -285,10 +298,10 @@ estimate_theta_ML = function(gamma, a, b, X) {
 estimate_mu_Big_Sigma = function(X, mu.old, Big_Sigma.old) {
   missingcols = calculate_missing_cols(X)
   if (missingcols != 0) {
-    list(apply(X, 2, mean), linshrink_cov(X))
+    mu.old = apply(X, 2, mean)
+    Big_Sigma.old = linshrink_cov(X)
   }
-  else
-    list(mu.old, Big_Sigma.old)
+  list(mu.old, Big_Sigma.old)
 }
 
 update_params = function(beta.old, beta, eta,
@@ -299,10 +312,10 @@ update_params = function(beta.old, beta, eta,
                          X) {
   missingcols = calculate_missing_cols(X)
   if (eta != 1) {
-    beta = beta.old + eta * (beta - beta.old)  
+    beta = beta.old + eta * (beta - beta.old)
     sigma = sigma.old + eta * (sigma - sigma.old)
     theta = theta.old + eta * (theta - theta.old)
-    if (missingcols != 0) { 
+    if (missingcols != 0) {
       mu = mu.old + eta*(mu - mu.old)
       Big_Sigma = Big_Sigma.old + eta * (Big_Sigma - Big_Sigma.old)
     }
@@ -320,14 +333,15 @@ scale_X = function(X, scale) {
   if (scale) {
     X.sim = t(t(X.sim) / std.w)
   }
-  else X.sim = X
+  else
+    X.sim = X
   list(X.sim, row.w, mean.w, std.w)
 }
 
-iterate_saem_algorithm = function(cstop = 1, 
+iterate_saem_algorithm = function(cstop = 1,
                                   tol_em,
-                                  initialization_list, 
-                                  estimations_cache, 
+                                  initialization_list,
+                                  estimations_cache,
                                   maxit,
                                   print_iter,
                                   X, y,
@@ -336,8 +350,8 @@ iterate_saem_algorithm = function(cstop = 1,
                                   scale,
                                   a, b) {
   t = 0
-  beta = initialization_list[[1]] 
-  gamma = initialization_list[[2]] 
+  beta = initialization_list[[1]]
+  gamma = initialization_list[[2]]
   sigma = initialization_list[[3]]
   theta = initialization_list[[4]]
   c = initialization_list[[5]]
@@ -358,7 +372,7 @@ iterate_saem_algorithm = function(cstop = 1,
     
     if ((print_iter == TRUE) & (t %% 100 == 0)) {
       cat(sprintf("Iteration no."), t, "\n",
-          "beta = ", beta, ", 
+          "beta = ", beta, ",
                 sigma = ", sigma, "\n",
           "Distance from last iter = ", cstop)
     }
@@ -367,22 +381,22 @@ iterate_saem_algorithm = function(cstop = 1,
     binomial_prob =  generate_binomial_prob(beta, theta, c, lambda_sigma_inv, rank)
     gamma = generate_gamma_t(ncol(X), binomial_prob)
     c = generate_c_t(beta, gamma, lambda_sigma_inv, rank)
-    X = generate_X(Big_Sigma, mu, beta, sigma, 
+    X = generate_X(Big_Sigma, mu, beta, sigma,
                    y, X, row.w, std.w, mean.w)
-    old_list = create_old_list(beta, sigma, theta, 
-                               mu, Big_Sigma, 
+    old_list = create_old_list(beta, sigma, theta,
+                               mu, Big_Sigma,
                                calculate_missing_cols(X))
-    beta.old = old_list[1][[1]]
-    sigma.old = old_list[2]
-    theta.old = old_list[3]
-    mu.old = old_list[4]
-    Big_Sigma.old = old_list[5]
+    beta.old = old_list[[1]]
+    sigma.old = old_list[[2]]
+    theta.old = old_list[[3]]
+    mu.old = old_list[[4]]
+    Big_Sigma.old = old_list[[5]]
     
     beta = estimate_beta_ML(gamma, c, X, y, lambda_sigma)
     
     cstop = sum((beta - beta.old) ^ 2)
     
-    sigma = estimate_sigma_ML(X, y, beta, 
+    sigma = estimate_sigma_ML(X, y, beta,
                               lambda, lambda_sigma,
                               sigma.known, sigma,
                               gamma, c)
