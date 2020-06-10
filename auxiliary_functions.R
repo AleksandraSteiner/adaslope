@@ -372,7 +372,7 @@ iterate_saem_algorithm = function(cstop = 1,
     old_list = create_old_list(beta, sigma, theta, 
                                mu, Big_Sigma, 
                                calculate_missing_cols(X))
-    beta.old = old_list[1]
+    beta.old = old_list[1][[1]]
     sigma.old = old_list[2]
     theta.old = old_list[3]
     mu.old = old_list[4]
@@ -409,11 +409,11 @@ iterate_saem_algorithm = function(cstop = 1,
     mu = updated_params[[4]]
     Big_Sigma = updated_params[[5]]
     
-    estimations_cache[1][, t] = beta
-    estimations_cache[2][, t] = sigma
-    estimations_cache[3][, t] = gamma
-    estimations_cache[4][, t] = theta
-    estimations_cache[5][, t] = c
+    estimations_cache[[1]][, t] = beta
+    estimations_cache[[2]][, t] = gamma
+    estimations_cache[[3]][, t] = sigma
+    estimations_cache[[4]][, t] = theta
+    estimations_cache[[5]][, t] = c
   }
   list(estimations_cache, X)
 }
