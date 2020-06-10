@@ -1,47 +1,24 @@
-library(glmnet)
-library(SLOPE)
-library(nlshrink)
-library(MASS)
-source("auxiliary_slobe.R")
-
-slope_admm <- function(X, y, lambda, p, rho, max_iter=500, tol=1e-6) {
-  
-  M <- t(X) %*% X
-  M <- M + diag(p) * rho
-  M <- solve(M)
-  MXtY <- M %*% (t(X) %*% Y)
-  lam_seq_rho <- lambda / rho
-  
-  i <- 0
-  x <- rep(0, p)
-  z <- rep(0, p)
-  u <- rep(0, p)
-  z_new <- rep(0, p)
-  z_new_arma <- rep(0, p)
-  x_plus_u <- rep(0, p)
-  dual_feas = 0.0; primal_feas = 0.0
-  
-  while(i < max_iter) {
-    x <- MXtY + M %*% (rho * (z - u))
-    x_plus_u <- x+u
-    z_new <- prox_sorted_L1(x_plus_u, lam_seq_rho)
-    z_new_arma <- z_new
-    
-    u <- u + (x - z_new)
-    
-    dual_feas = norm(rho * (z_new - z))
-    primal_feas = norm(z_new - x)
-    
-    z = z_new
-    
-    if(primal_feas < tol & dual_feas < tol) {
-      i = max_iter
-    }
-  }
-  
-  return(z)
-}
-
+#' Create an adaSlope model with simplified algorithm
+#' 
+#' @param X Design matrix
+#' @param y Response vecor
+#' @param lambda Vector of coefficient L1 penalties
+#' @param a Prior for coefficient calculation
+#' @param b Prior for coefficient calculation
+#' @param maxit
+#' @param tol_em
+#' @param impute
+#' @param sigma.known
+#' @param sigma.init
+#' @param print_iter
+#' 
+#' @return A SLOPE model
+#' 
+#' @examples
+#'X = matrix(rnorm(1000), nrow=100)
+#'b = c(sample(-5:5, 5), rep(0, 5))
+#'y = X %*% b + rnorm(100, 0, 0.1)
+#'A <- SLOBE(X, y, lambda=seq(10, 5, length.out=10))
 SLOBE <- function(X, y, lambda,
                   a=1, b=1,
                   beta.start=NA,
@@ -151,13 +128,13 @@ SLOBE <- function(X, y, lambda,
 }
 
 
-X = matrix(rnorm(1000), nrow=100)
-b = c(sample(-5:5, 5), rep(0, 5))
-y = X %*% b + rnorm(100, 0, 0.1)
-A <- SLOBE(X, y, lambda=seq(5, 1, length.out=10), print_iter=TRUE)
-seq(5, 1, length.out=10)
-A
-class(A)
-summary(A)
-A$betas
-plot(A)
+#X = matrix(rnorm(1000), nrow=100)
+#b = c(sample(-5:5, 5), rep(0, 5))
+#y = X %*% b + rnorm(100, 0, 0.1)
+#A <- SLOBE(X, y, lambda=seq(10, 5, length.out=10))
+#seq(5, 1, length.out=10)
+#A
+#class(A)
+#summary(A)
+#A$betas
+#plot(A)

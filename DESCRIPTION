@@ -1,0 +1,25 @@
+Package: adaSLOPE
+Title: Adaptive Bayesian Slope
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Marcin",
+           family = "Sidorowicz",
+           role = c("aut", "cre"),
+           email = "first.last@example.com",
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+    person(given = "Aleksandra",
+           family = "Steiner",
+           role = c("aut", "cre"),
+           email = "first.last@example.com",
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+    person(given = "Adam",
+           family = "Wawrzynczyk",
+           role = c("aut", "cre"),
+           email = "first.last@example.com",
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: Implementation of ABSlope as described in M. Bogdan et al., 2015
+License: GPL
+Encoding: UTF-8
+LazyData: true
+Depends: glmnet, nlshrink, truncdist, MASS, missMDA, mice, SLOPE
+RoxygenNote: 7.1.0
