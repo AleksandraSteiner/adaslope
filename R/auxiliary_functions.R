@@ -230,30 +230,29 @@ create_old_list = function(beta, sigma, theta, mu,
   list(beta.old, sigma.old, theta.old, mu.old, Big_Sigma.old)
 }
 
-#PSOBCZYK function
-slope_admm = function(A, b, z, u, lambda_seq, rho,
-                      max_iter = 100, tol_infeas = 1e-3,
-                      verbose = FALSE) {
-  M <- solve(crossprod(A) + diag(rho, ncol(A)))
-  MtAb <- M %*% crossprod(A,b)
-  lambda_seq_rho <- lambda_seq/rho
-  z_new <- NULL
-  for(iter in 1:max_iter){ #just until we do not choose some reasonable convergence criterion
+slope_admm(Xtemp, y, rep(0, p), rep(0, p), lambda_seq = lambda_sigma, 1)$z
+
+#adjusted PSOBCZYK function
+slope_admm = function(A, b, z, u, 
+                      lambda_seq, rho,
+                      max_iter = 100, 
+                      tol_infeas = 1e-3) {
+  M = solve(crossprod(A) + diag(rho, ncol(A)))
+  MtAb = M %*% crossprod(A, b)
+  lambda_seq_rho = lambda_seq / rho
+  z_new = NULL
+  for(iter in 1:max_iter) {
     
-    x <- MtAb + crossprod(M, (rho*(z - u)))
-    z_new <- SLOPE::prox_sorted_L1(x = as.vector(x + u), lambda = lambda_seq_rho)
-    u <- u + x - z_new
+    x = MtAb + crossprod(M, (rho * (z - u)))
+    z_new = prox_sorted_L1(x = as.vector(x + u), lambda = lambda_seq_rho)
+    u = u + x - z_new
     
-    dual_feasibility <- norm(rho*(z_new-z), type = "2")
-    primal_feasibility <- norm((z_new - x), type = "2")
+    dual_feasibility = norm(rho * (z_new - z), type = "2")
+    primal_feasibility = norm((z_new - x), type = "2")
     
-    z <- z_new
+    z = z_new
     
-    if(verbose)
-      message(sprintf("Iter %i\nprimal: %f\ndual: %f\n",
-                      iter, primal_feasibility, dual_feasibility))
-    
-    if(dual_feasibility < tol_infeas & primal_feasibility < tol_infeas){
+    if(dual_feasibility < tol_infeas & primal_feasibility < tol_infeas) {
       break;
     }
   }
