@@ -44,5 +44,5 @@ Create an adaSlope model with full algorithm
 X = matrix(rnorm(1000), nrow=100)
 b = c(sample(-5:5, 5), rep(0, 5))
 y = X \%*\% b + rnorm(100, 0, 0.1)
-A <- ABSLOBE(X, y, lambda=seq(10, 5, length.out=10))
+A <- ABSLOPE(X, y,lambda=seq(10, 5, length.out=10), a=1, b=1)
 }

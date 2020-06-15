@@ -18,7 +18,7 @@
 #'X = matrix(rnorm(1000), nrow=100)
 #'b = c(sample(-5:5, 5), rep(0, 5))
 #'y = X %*% b + rnorm(100, 0, 0.1)
-#'A <- ABSLOBE(X, y, lambda=seq(10, 5, length.out=10))
+#'A <- ABSLOPE(X, y,lambda=seq(10, 5, length.out=10), a=1, b=1)
 #'@export
 ABSLOPE = function(X, y,
                    lambda, #add seed
@@ -58,8 +58,18 @@ ABSLOPE = function(X, y,
                                             scale,
                                             a, b)
   
+  beta = as.data.frame(est_cache_result[[1]][1])[, maxit]
+  betas = t(as.data.frame(est_cache_result[[1]][1])[, 1:maxit])
+  gamma = which(as.data.frame(est_cache_result[[1]][2])[, maxit] > 0)
+  sigmas = as.data.frame(est_cache_result[[1]][3])[, 1:maxit]
+  
+  res = list('beta'=beta, 'selected'=gamma, 'sigmas'=sigmas, 'betas'=betas)
+  class(res) <- c('abslope')
+  
+  return(res)
+  
   list(beta = as.data.frame(est_cache_result[[1]][1])[, maxit],
-       beta.new = as.data.frame(est_cache_result[[1]][1])[, maxit] *
+       beta.new = as.data.frame(est_cache_result[[1]][1])[, 1:maxit] *
          (rowMeans(as.data.frame(est_cache_result[[1]][2])[ , -(1:20)], na.rm = TRUE) > 1/2))
 }
 

@@ -85,8 +85,8 @@ SLOBE <- function(X, y, lambda,
     # Get new parameters by maximizing likelihood
     
     # Maximize for beta
-    beta_new <- SLOPE_solver(X, y, lambda=lambda_sigma)$x
-    #beta_new <- estimate_beta_ML(gamma, c, X, y, lambda_sigma)
+    #beta_new <- SLOPE_solver(X, y, lambda=lambda_sigma)$x
+    beta_new <- estimate_beta_ML(gamma, c, X, y, lambda_sigma)
     
     sigma_new <- estimate_sigma_ML(X, y, beta, lambda,
                                    lambda_sigma, sigma.known, sigma,

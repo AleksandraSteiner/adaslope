@@ -25,3 +25,25 @@ plot.abslope <- function(object, ...) {
           col='red')
   }
 }
+
+#'@export
+coef.abslope <- function(object, ...) {
+  cat('Adaptive Bayesian slope coefficients')
+  line <- format(round(object$beta, 4), nsmall=2)
+  cat(line)
+}
+
+#'@export
+print.abslope <- function(object, ...) {
+  cat('Adaptive Bayesian slope model\n\n')
+  cat('Selected coefficients:\n')
+  cat(object$selected, '\n\n')
+  cat('Coefficients:\n')
+  line <- format(round(object$beta, 4), nsmall=2)
+  cat(line, '\n')
+}
+
+#'@export
+predict.abslope <- function(object, model, ...) {
+  return(model %*% object$beta)
+}
