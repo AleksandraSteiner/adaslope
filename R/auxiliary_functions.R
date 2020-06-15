@@ -230,8 +230,6 @@ create_old_list = function(beta, sigma, theta, mu,
   list(beta.old, sigma.old, theta.old, mu.old, Big_Sigma.old)
 }
 
-slope_admm(Xtemp, y, rep(0, p), rep(0, p), lambda_seq = lambda_sigma, 1)$z
-
 #adjusted PSOBCZYK function
 slope_admm = function(A, b, z, u, 
                       lambda_seq, rho,
