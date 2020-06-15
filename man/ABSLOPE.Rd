@@ -24,7 +24,7 @@ ABSLOPE(
 \arguments{
 \item{X}{Design matrix}
 
-\item{y}{Response vecor}
+\item{y}{Response vector}
 
 \item{lambda}{Vector of coefficient L1 penalties}
 

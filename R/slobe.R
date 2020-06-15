@@ -19,6 +19,7 @@
 #'b = c(sample(-5:5, 5), rep(0, 5))
 #'y = X %*% b + rnorm(100, 0, 0.1)
 #'A <- SLOBE(X, y, lambda=seq(10, 5, length.out=10))
+#'@export
 SLOBE <- function(X, y, lambda,
                   a=1, b=1,
                   beta.start=NA,

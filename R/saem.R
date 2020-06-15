@@ -19,6 +19,7 @@
 #'b = c(sample(-5:5, 5), rep(0, 5))
 #'y = X %*% b + rnorm(100, 0, 0.1)
 #'A <- ABSLOBE(X, y, lambda=seq(10, 5, length.out=10))
+#'@export
 ABSLOPE = function(X, y,
                    lambda, #add seed
                    a, b,

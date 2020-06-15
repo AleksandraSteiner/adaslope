@@ -1,3 +1,4 @@
+#'@export
 summary.abslope <- function(object, ...) {
   cat('Adaptive Bayesian slope model\n\n')
   cat('Selected coefficients:\n')
@@ -7,6 +8,7 @@ summary.abslope <- function(object, ...) {
   cat(line)
 }
 
+#'@export
 plot.abslope <- function(object, ...) {
   
   n <- nrow(object$betas)
