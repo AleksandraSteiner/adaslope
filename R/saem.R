@@ -67,10 +67,6 @@ ABSLOPE = function(X, y,
   class(res) <- c('abslope')
   
   return(res)
-  
-  list(beta = as.data.frame(est_cache_result[[1]][1])[, maxit],
-       beta.new = as.data.frame(est_cache_result[[1]][1])[, 1:maxit] *
-         (rowMeans(as.data.frame(est_cache_result[[1]][2])[ , -(1:20)], na.rm = TRUE) > 1/2))
 }
 
 #small test
