@@ -5,12 +5,12 @@
 #' @param lambda Vector of coefficient L1 penalties
 #' @param a Prior for coefficient calculation
 #' @param b Prior for coefficient calculation
-#' @param maxit
-#' @param tol_em
-#' @param impute
-#' @param sigma.known
-#' @param sigma.init
-#' @param print_iter
+#' @param maxit Maximum number of iterations
+#' @param tol_em The tolerance number to stop SAEM
+#' @param impute Imputation method
+#' @param sigma.known Logical value that tells whether sigma is known
+#' @param sigma.init Value of known sigma
+#' @param print_iter Logical value that tells whether the estimated parameters will be printed in each iteration of SAEM
 #' 
 #' @return A SLOPE model
 #' 
